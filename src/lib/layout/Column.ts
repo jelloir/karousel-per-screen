@@ -281,8 +281,9 @@ class Column {
 
         if (this.width === 0) {
             this.setWidth(window.client.preferredWidth, false);
+        } else {
+            this.setWidth(this.width, false); // re-apply width constraints of the new window
         }
-        // TODO: also change column width if the new window requires it
 
         this.resizeWindows();
 
