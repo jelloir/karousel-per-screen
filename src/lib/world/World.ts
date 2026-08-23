@@ -112,6 +112,9 @@ class World {
             if (tiledWindow === null) {
                 return;
             }
+            if (tiledWindow.column.grid.isUserResizing()) {
+                return;
+            }
             const cursorAlreadyInFocus = rectContainsPoint(roundQtRect(Workspace.activeWindow.frameGeometry), Workspace.cursorPos);
             if (cursorAlreadyInFocus) {
                 return;
