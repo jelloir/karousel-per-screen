@@ -218,12 +218,12 @@ class Actions {
     };
 
     public readonly cyclePresetWidths = (cm: ClientManager, dm: DesktopManager, window: Window, column: Column, grid: Grid) => {
-        const nextWidth = this.config.presetWidths.next(column.getWidth(), column.getMinWidth(), column.getMaxWidth());
+        const nextWidth = this.config.presetWidths.next(column.getWidth(), column.getMinWidth(), column.getMaxWidth(), grid.desktop.tilingArea.width);
         column.setWidth(nextWidth, true);
     };
 
     public readonly cyclePresetWidthsReverse = (cm: ClientManager, dm: DesktopManager, window: Window, column: Column, grid: Grid) => {
-        const nextWidth = this.config.presetWidths.prev(column.getWidth(), column.getMinWidth(), column.getMaxWidth());
+        const nextWidth = this.config.presetWidths.prev(column.getWidth(), column.getMinWidth(), column.getMaxWidth(), grid.desktop.tilingArea.width);
         column.setWidth(nextWidth, true);
     };
 
@@ -529,8 +529,8 @@ namespace Actions {
     export interface Config {
         manualScrollStep: number;
         presetWidths: {
-            next: (currentWidth: number, minWidth: number, maxWidth: number) => number;
-            prev: (currentWidth: number, minWidth: number, maxWidth: number) => number
+            next: (currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) => number;
+            prev: (currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) => number
         };
         verticalResizeStep: number;
         columnResizer: ColumnResizer;

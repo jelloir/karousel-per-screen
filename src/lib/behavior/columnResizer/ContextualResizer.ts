@@ -1,6 +1,6 @@
 class ContextualResizer {
     constructor(
-        private readonly presetWidths: { getWidths: (minWidth: number, maxWidth: number) => number[] },
+        private readonly presetWidths: { getWidths: (minWidth: number, maxWidth: number, tilingAreaWidth: number) => number[] },
     ) {}
 
     public increaseWidth(column: Column) {
@@ -28,7 +28,7 @@ class ContextualResizer {
                 column.getWidth() + leftSpace + rightSpace,
                 column.getWidth() + leftSpace + rightSpace + leftVisibleColumn.getWidth() + grid.config.gapsInnerHorizontal,
                 column.getWidth() + leftSpace + rightSpace + rightVisibleColumn.getWidth() + grid.config.gapsInnerHorizontal,
-                ...this.presetWidths.getWidths(minWidth, maxWidth),
+                ...this.presetWidths.getWidths(minWidth, maxWidth, desktop.tilingArea.width),
             ],
             width => width - column.getWidth(),
         );
@@ -75,7 +75,7 @@ class ContextualResizer {
             [
                 column.getWidth() - leftOffScreen,
                 column.getWidth() - rightOffScreen,
-                ...this.presetWidths.getWidths(minWidth, maxWidth),
+                ...this.presetWidths.getWidths(minWidth, maxWidth, desktop.tilingArea.width),
             ],
             width => column.getWidth() - width,
         );
@@ -90,7 +90,7 @@ class ContextualResizer {
     public maximizeWidth(column: Column) {
         const grid = column.grid;
         const desktop = grid.desktop;
-        const presetWidths = this.presetWidths.getWidths(column.getMinWidth(), column.getMaxWidth());
+        const presetWidths = this.presetWidths.getWidths(column.getMinWidth(), column.getMaxWidth(), desktop.tilingArea.width);
         const maxWidth = presetWidths[presetWidths.length-1];
         column.setWidth(maxWidth, true);
         desktop.scrollCenterVisible(column);
@@ -99,7 +99,7 @@ class ContextualResizer {
     public minimizeWidth(column: Column) {
         const grid = column.grid;
         const desktop = grid.desktop;
-        const presetWidths = this.presetWidths.getWidths(column.getMinWidth(), column.getMaxWidth());
+        const presetWidths = this.presetWidths.getWidths(column.getMinWidth(), column.getMaxWidth(), desktop.tilingArea.width);
         const minWidth = presetWidths[0];
         column.setWidth(minWidth, true);
         desktop.scrollCenterVisible(column);

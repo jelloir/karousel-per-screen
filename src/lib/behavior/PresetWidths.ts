@@ -1,31 +1,31 @@
 class PresetWidths {
-    private readonly presets: ((maxWidth: number) => number)[];
+    private readonly presets: ((tilingAreaWidth: number) => number)[];
 
     constructor(presetWidths: string, spacing: number) {
         this.presets = PresetWidths.parsePresetWidths(presetWidths, spacing);
     }
 
-    public next(currentWidth: number, minWidth: number, maxWidth: number) {
-        const widths = this.getWidths(minWidth, maxWidth);
+    public next(currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) {
+        const widths = this.getWidths(minWidth, maxWidth, tilingAreaWidth);
         const nextIndex = widths.findIndex(width => width > currentWidth);
         return nextIndex >= 0 ? widths[nextIndex] : widths[0];
     }
 
-    public prev(currentWidth: number, minWidth: number, maxWidth: number) {
-        const widths = this.getWidths(minWidth, maxWidth).reverse();
+    public prev(currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) {
+        const widths = this.getWidths(minWidth, maxWidth, tilingAreaWidth).reverse();
         const nextIndex = widths.findIndex(width => width < currentWidth);
         return nextIndex >= 0 ? widths[nextIndex] : widths[0];
     }
 
-    public getWidths(minWidth: number, maxWidth: number) {
-        const widths = this.presets.map(f => clamp(f(maxWidth), minWidth, maxWidth));
+    public getWidths(minWidth: number, maxWidth: number, tilingAreaWidth: number) {
+        const widths = this.presets.map(f => clamp(f(tilingAreaWidth), minWidth, maxWidth));
         widths.sort((a, b) => a - b);
         return uniq(widths);
     }
 
-    private static parsePresetWidths(presetWidths: string, spacing: number): ((maxWidth: number) => number)[] {
+    private static parsePresetWidths(presetWidths: string, spacing: number): ((tilingAreaWidth: number) => number)[] {
         function getRatioFunction(ratio: number) {
-            return (maxWidth: number) => Math.floor((maxWidth + spacing) * ratio - spacing);
+            return (tilingAreaWidth: number) => Math.floor((tilingAreaWidth + spacing) * ratio - spacing);
         }
 
         return presetWidths.split(",").map((widthStr: string) => {

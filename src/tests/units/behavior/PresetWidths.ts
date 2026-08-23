@@ -1,7 +1,8 @@
 tests.register("PresetWidths", 1, () => {
-    const minWidth = 50;
-    const maxWidth = 800;
+    const tilingAreaWidth = 800;
     const spacing = 10;
+    const minWidth = 50;
+    const maxWidth = tilingAreaWidth;
 
     const testCases = [
         { str: "100%, 50%", result: [395, 800] },
@@ -26,10 +27,10 @@ tests.register("PresetWidths", 1, () => {
     function assertWidths(presetWidths: PresetWidths, expectedWidths: number[]) {
         let currentWidth = 0;
         for (const expectedWidth of expectedWidths) {
-            currentWidth = presetWidths.next(currentWidth, minWidth, maxWidth);
+            currentWidth = presetWidths.next(currentWidth, minWidth, maxWidth, tilingAreaWidth);
             Assert.equal(currentWidth, expectedWidth);
         }
-        const repeatedWidth = presetWidths.next(currentWidth, minWidth, maxWidth);
+        const repeatedWidth = presetWidths.next(currentWidth, minWidth, maxWidth, tilingAreaWidth);
         Assert.equal(repeatedWidth, expectedWidths[0]);
     }
 

@@ -13,9 +13,9 @@ class World {
         this.cursorFollowsFocus = config.cursorFollowsFocus;
 
         let presetWidths = {
-            next: (currentWidth: number, minWidth: number, maxWidth: number) => currentWidth,
-            prev: (currentWidth: number, minWidth: number, maxWidth: number) => currentWidth,
-            getWidths: (minWidth: number, maxWidth: number): number[] => [],
+            next: (currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) => currentWidth,
+            prev: (currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) => currentWidth,
+            getWidths: (minWidth: number, maxWidth: number, tilingAreaWidth: number): number[] => [],
         };
         try {
             presetWidths = new PresetWidths(config.presetWidths, config.gapsInnerHorizontal);
