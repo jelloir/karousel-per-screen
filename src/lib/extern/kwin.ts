@@ -57,6 +57,7 @@ interface KwinClient {
 
     readonly caption: string;
     readonly minSize: Readonly<QmlSize>;
+    readonly maxSize: Readonly<QmlSize>;
     readonly transient: boolean;
     readonly transientFor: KwinClient | null;
     readonly clientGeometry: Readonly<QmlRect>;

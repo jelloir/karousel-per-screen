@@ -84,11 +84,18 @@ class Column {
                 maxMinWidth = minWidth;
             }
         }
-        return maxMinWidth;
+        return Math.min(maxMinWidth, this.grid.desktop.tilingArea.width); // min width mustn't exceed tilingArea width
     }
 
     public getMaxWidth() {
-        return this.grid.desktop.tilingArea.width;
+        let minMaxWidth = this.grid.desktop.tilingArea.width;
+        for (const window of this.windows.iterator()) {
+            const maxWidth = window.client.kwinClient.maxSize.width.floor();
+            if (maxWidth < minMaxWidth) {
+                minMaxWidth = maxWidth;
+            }
+        }
+        return Math.max(minMaxWidth, this.getMinWidth()); // max width mustn't be lower than min width
     }
 
     public setWidth(width: number, setPreferred: boolean) {

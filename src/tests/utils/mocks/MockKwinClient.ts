@@ -5,6 +5,7 @@ class MockKwinClient {
 
     public caption = "App";
     public minSize: Readonly<QmlSize> = new MockQmlSize(randomJitter(), randomJitter());
+    public maxSize: Readonly<QmlSize> = new MockQmlSize(9999, 9999);
     public readonly transient: boolean;
     public move = false;
     public resize = false;
