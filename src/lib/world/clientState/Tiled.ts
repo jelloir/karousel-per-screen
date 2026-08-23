@@ -196,11 +196,12 @@ namespace ClientState {
         }
 
         private static getResizeNeighborColumn(window: Window) {
+            const eps = 20; // Detect edge near the edge as well
             const kwinClient = window.client.kwinClient;
             const column = window.column;
-            if (Workspace.cursorPos.x > rectRightRound(kwinClient.clientGeometry)) {
+            if (Workspace.cursorPos.x > rectRightRound(kwinClient.clientGeometry) - eps) {
                 return column.grid.getRightColumn(column);
-            } else if (Workspace.cursorPos.x < kwinClient.clientGeometry.x.round()) {
+            } else if (Workspace.cursorPos.x < kwinClient.clientGeometry.x.round() + eps) {
                 return column.grid.getLeftColumn(column);
             } else {
                 return null;
