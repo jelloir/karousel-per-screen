@@ -5,12 +5,10 @@ class World {
     private readonly workspaceSignalManager: SignalManager;
     private readonly shortcutActions: ShortcutAction[];
     private readonly screenResizedDelayer: Delayer;
-    private readonly cursorFollowsFocus: boolean;
 
     constructor(config: Config) {
         const focusPasser = new FocusPassing.Passer();
         this.workspaceSignalManager = initWorkspaceSignalHandlers(this, focusPasser);
-        this.cursorFollowsFocus = config.cursorFollowsFocus;
 
         let presetWidths = {
             next: (currentWidth: number, minWidth: number, maxWidth: number, tilingAreaWidth: number) => currentWidth,
@@ -101,25 +99,6 @@ class World {
         const currentDesktop = this.desktopManager.getCurrentDesktop();
         if (currentDesktop !== undefined) {
             currentDesktop.arrange();
-            this.moveCursorToFocus();
-        }
-    }
-
-    private moveCursorToFocus() {
-        if (this.cursorFollowsFocus && Workspace.activeWindow !== null) {
-            // Only move cursor for tiled windows
-            const tiledWindow = this.clientManager.findTiledWindow(Workspace.activeWindow);
-            if (tiledWindow === null) {
-                return;
-            }
-            if (tiledWindow.column.grid.isUserResizing()) {
-                return;
-            }
-            const cursorAlreadyInFocus = rectContainsPoint(roundQtRect(Workspace.activeWindow.frameGeometry), Workspace.cursorPos);
-            if (cursorAlreadyInFocus) {
-                return;
-            }
-            moveCursorToFocus.call();
         }
     }
 

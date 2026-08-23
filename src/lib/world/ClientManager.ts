@@ -181,8 +181,13 @@ class ClientManager {
     public onClientFocused(kwinClient: KwinClient) {
         this.lastFocusedClient = kwinClient;
         const window = this.findTiledWindow(kwinClient);
-        if (window !== null) {
-            window.onFocused();
+        if (window === null) {
+            return;
+        }
+
+        window.onFocused();
+        if (this.config.cursorFollowsFocus) {
+            this.moveCursorToWindow(window);
         }
     }
 
@@ -215,10 +220,19 @@ class ClientManager {
     public destroy() {
         this.removeAllClients();
     }
+
+    private moveCursorToWindow(window: Window) {
+        const cursorAlreadyOnWindow = rectContainsPoint(roundQtRect(window.client.kwinClient.frameGeometry), Workspace.cursorPos);
+        if (cursorAlreadyOnWindow) {
+            return;
+        }
+        moveCursorToFocus.call();
+    }
 }
 
 namespace ClientManager {
     export interface Config {
         floatingKeepAbove: boolean;
+        cursorFollowsFocus: boolean;
     }
 }
