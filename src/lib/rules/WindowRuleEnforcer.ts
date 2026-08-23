@@ -14,6 +14,7 @@ class WindowRuleEnforcer {
         return this.preferTiling.matches(kwinClient) || (
             kwinClient.normalWindow &&
             !kwinClient.transient &&
+            !kwinClient.modal &&
             kwinClient.managed &&
             kwinClient.pid > -1 &&
             !kwinClient.fullScreen &&

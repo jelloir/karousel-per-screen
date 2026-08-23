@@ -72,6 +72,7 @@ interface KwinClient {
     readonly normalWindow: boolean;
     readonly managed: boolean;
     readonly popupWindow: boolean;
+    readonly modal: boolean;
     readonly pid: number;
 
     fullScreen: boolean;

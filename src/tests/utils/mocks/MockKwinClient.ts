@@ -16,6 +16,7 @@ class MockKwinClient {
     public readonly normalWindow: boolean = true;
     public readonly managed: boolean = true;
     public readonly popupWindow: boolean = false;
+    public readonly modal: boolean = false;
     public readonly pid = 1;
 
     private _maximizedVertically = false;
