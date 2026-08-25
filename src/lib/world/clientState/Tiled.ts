@@ -13,6 +13,10 @@ namespace ClientState {
             const window = new Window(client, column);
 
             this.window = window;
+            // Announce ownership as soon as the window is tiled, not only when it later changes
+            // grid. Otherwise the effect is left to guess from geometry, which is only right while
+            // the window happens to sit inside its own screen.
+            Tiled.setClipOwner(window, grid.desktop.getScreen().name);
             this.signalManager = Tiled.initSignalManager(world, window, grid.config);
         }
 
@@ -294,11 +298,19 @@ namespace ClientState {
                 return;
             }
 
+            Tiled.setClipOwner(window, grid.desktop.getScreen().name);
+
             const newColumn = new Column(grid, grid.getLastFocusedColumn() ?? grid.getLastColumn());
             const passFocus = window.isFocused() ? FocusPassing.Type.OnUnfocus : FocusPassing.Type.None;
             window.moveToColumn(newColumn, true, passFocus);
         }
 
+        // The clip2output effect keeps ownership deliberately sticky, so that scrolled-off columns
+        // stay clipped to their own screen. A genuine change of screen therefore has to be
+        // announced. A no-op when the effect is not loaded.
+        private static setClipOwner(window: Window, screenName: string) {
+            announceClipOwner(window.client.kwinClient, screenName);
+        }
 
         private static prepareClientForTiling(client: ClientWrapper, config: LayoutConfig) {
             if (config.skipSwitcher) {

@@ -2,8 +2,17 @@ class MockKwinClient {
     public readonly __brand = "KwinClient";
 
     private static readonly borderThickness = 10;
+    private static nextId = 1;
+
+    private static makeUuid(): QUuid {
+        const text = "{" + (MockKwinClient.nextId++) + "}";
+        return { __brand: "QUuid", toString: () => text } as unknown as QUuid;
+    }
 
     public caption = "App";
+    // a QUuid in KWin, so the mock is an object too - a plain string would hide the
+    // marshalling bug that costs the D-Bus call its arguments
+    public readonly internalId = MockKwinClient.makeUuid();
     public minSize: Readonly<QmlSize> = new MockQmlSize(randomJitter(), randomJitter());
     public maxSize: Readonly<QmlSize> = new MockQmlSize(9999, 9999);
     public readonly transient: boolean;

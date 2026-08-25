@@ -62,6 +62,18 @@ Item {
         onProgressChanged: qmlBase.karouselInstance.gestureScroll(progress)
     }
 
+    // Tells the clip2output KWin effect which screen owns a window, so a column Karousel
+    // parks outside its own screen is clipped there instead of reappearing on the neighbour.
+    // Harmlessly does nothing when the effect is not loaded.
+    DBusCall {
+        id: clipSetOwner
+
+        service: "org.kde.KWin"
+        path: "/ClipToOutput"
+        dbusInterface: "org.kde.kwin.KWin.ClipToOutputEffect"
+        method: "setOwner"
+    }
+
     DBusCall {
         id: moveCursorToFocus
 
