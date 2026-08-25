@@ -412,10 +412,6 @@ class Actions {
         grid.desktop.scrollToColumn(rightColumn, false);
     };
 
-    public readonly screenSwitch = (cm: ClientManager, dm: DesktopManager) => {
-        dm.selectScreen(Workspace.activeScreen);
-    };
-
     public readonly focus = (columnIndex: number, cm: ClientManager, dm: DesktopManager) => {
         const desktop = dm.getCurrentDesktop();
         if (desktop === undefined) {

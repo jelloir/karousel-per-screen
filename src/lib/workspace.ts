@@ -34,8 +34,9 @@ function initWorkspaceSignalHandlers(world: World, focusPasser: FocusPassing.Pas
 
     manager.connect(Workspace.screensChanged, () => {
         world.do((clientManager, desktopManager) => {
-            desktopManager.selectScreen(Workspace.activeScreen);
+            desktopManager.updateScreens();
         });
+        world.onScreenResized(); // re-read the client areas once the screen layout has settled
     });
 
     manager.connect(Workspace.activitiesChanged, () => {

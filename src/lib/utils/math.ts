@@ -32,6 +32,15 @@ function rectBottom(rect: QmlRect) {
     return rect.y + rect.height;
 }
 
+function rectIntersectionArea(a: QmlRect, b: QmlRect) {
+    const width = Math.min(rectRight(a), rectRight(b)) - Math.max(a.x, b.x);
+    const height = Math.min(rectBottom(a), rectBottom(b)) - Math.max(a.y, b.y);
+    if (width <= 0 || height <= 0) {
+        return 0;
+    }
+    return width * height;
+}
+
 function rectContainsPoint(rect: QmlRect, point: QmlPoint) {
     return rect.x <= point.x &&
         rectRight(rect) >= point.x &&

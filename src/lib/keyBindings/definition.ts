@@ -251,12 +251,6 @@ function getKeyBindings(world: World, actions: Actions): KeyBinding[] {
             action: () => world.do(actions.gridScrollEnd),
         },
         {
-            name: "screen-switch",
-            description: "Move Karousel grid to the current screen",
-            defaultKeySequence: "Meta+Ctrl+Return",
-            action: () => world.do(actions.screenSwitch),
-        },
-        {
             name: "tail-move-to-next-desktop",
             description: "Move this and all following columns to the next desktop",
             action: () => world.doIfTiledFocused(actions.tailMoveToNextDesktop),

@@ -1,0 +1,102 @@
+// One Karousel grid per screen: every screen tiles independently.
+
+function stackedScreens() {
+    return [
+        new MockQmlRect(0, 0, 800, 600),
+        new MockQmlRect(0, 600, 800, 600),
+    ];
+}
+
+// creates one window whose initial geometry places it on the given screen
+function createClientOnScreen(workspaceMock: MockWorkspace, screenRect: QmlRect, width = 100) {
+    return workspaceMock.createClientsWithFrames(
+        new MockQmlRect(screenRect.x + 10, screenRect.y + 10, width, 200),
+    )[0];
+}
+
+function assertOnScreen(client: MockKwinClient, screenRect: QmlRect, message: string) {
+    const frame = client.getActualFrameGeometry();
+    Assert.assert(
+        frame.y >= screenRect.y && rectBottom(frame) <= rectBottom(screenRect),
+        { message: `${message}: ${client} at ${frame} is not on screen ${screenRect}` },
+    );
+}
+
+tests.register("Per-screen containment", 10, () => {
+    const config = getDefaultConfig();
+    const { workspaceMock } = init(config, stackedScreens());
+    const [screen0, screen1] = screens;
+
+    const client0 = createClientOnScreen(workspaceMock, screen0);
+    const client1 = createClientOnScreen(workspaceMock, screen1);
+
+    assertOnScreen(client0, screen0, "window created on screen 1");
+    assertOnScreen(client1, screen1, "window created on screen 2");
+
+    // each screen's grid is laid out within its own tiling area, independently of the other
+    Assert.centered(config, tilingAreas[0], client0);
+    Assert.centered(config, tilingAreas[1], client1);
+
+    // adding a window to one screen must not disturb the other screen
+    const frameBefore = client0.getFrameGeometryCopy();
+    const client2 = createClientOnScreen(workspaceMock, screen1);
+    Assert.equalRects(client0.getActualFrameGeometry(), frameBefore, { message: "screen 1 disturbed by a window added to screen 2" });
+    assertOnScreen(client2, screen1, "second window on screen 2");
+    assertOnScreen(client1, screen1, "first window on screen 2");
+});
+
+tests.register("Columns scrolled out of view stay in their own grid", 10, () => {
+    const config = getDefaultConfig();
+    const { workspaceMock, world } = init(config, stackedScreens());
+    const [screen0, screen1] = screens;
+    const desktopManager = getDesktopManager(world);
+
+    // fill screen 1 until the row is wider than the screen, so the first column scrolls off it
+    const clients = [];
+    for (let i = 0; i < 4; i++) {
+        clients.push(createClientOnScreen(workspaceMock, screen0, 300));
+    }
+    // one window on the other screen, which must be left alone throughout
+    const otherClient = createClientOnScreen(workspaceMock, screen1);
+    const otherFrameBefore = otherClient.getFrameGeometryCopy();
+
+    const scrolledOff = clients[0];
+    const frame = scrolledOff.getActualFrameGeometry();
+    Assert.assert(
+        rectRight(frame) <= screen0.x || frame.x >= rectRight(screen0),
+        { message: `expected the first column to be scrolled off screen 1, but it is at ${frame}` },
+    );
+
+    // A column parked outside of every screen must not be re-homed. Stacked screens share their x
+    // range, so it is clipped rather than landing on the neighbouring monitor.
+    Assert.equal(
+        desktopManager.getScreenForGeometry(frame),
+        null,
+        { message: "a column scrolled out of view should be on no screen at all" },
+    );
+    Assert.equalRects(otherClient.getActualFrameGeometry(), otherFrameBefore,
+        { message: "screen 2 was disturbed by screen 1 overflowing" });
+});
+
+tests.register("Unplugging a screen takes over its windows", 10, () => {
+    const config = getDefaultConfig();
+    const { workspaceMock, world } = init(config, stackedScreens());
+    const [screen0, screen1] = screens;
+    const desktopManager = getDesktopManager(world);
+
+    const client0 = createClientOnScreen(workspaceMock, screen0);
+    const client1 = createClientOnScreen(workspaceMock, screen1);
+
+    // unplug the second monitor
+    workspaceMock.setScreens([screen0]);
+
+    Assert.equal(workspaceMock.screens.length, 1, { message: "second screen was not removed" });
+    assertOnScreen(client0, screen0, "window that was already on screen 1");
+    assertOnScreen(client1, screen0, "window evacuated from the unplugged screen");
+    Assert.equal(
+        desktopManager.getScreenForClient(client1).name,
+        workspaceMock.screens[0].name,
+        { message: "evacuated window did not join the remaining screen's grid" },
+    );
+});
+

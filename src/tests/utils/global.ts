@@ -8,25 +8,31 @@ let notificationInvalidPresetWidths: Notification;
 let moveCursorToFocus: DBusCall;
 
 let screen: MockQmlRect;
+let screens: MockQmlRect[];
 let tilingArea: MockQmlRect;
+let tilingAreas: MockQmlRect[];
 let gapH: number;
 let gapV: number;
 let runLog: string[];
 
-function init(config: Config) {
-    screen = new MockQmlRect(0, 0, 800, 600);
-    tilingArea = new MockQmlRect(
-        config.gapsOuterLeft,
-        config.gapsOuterTop,
-        screen.width - config.gapsOuterLeft - config.gapsOuterRight,
-        screen.height - config.gapsOuterTop - config.gapsOuterBottom,
-    );
+// `screenGeometries` defaults to a single screen, which is what all single-screen tests expect.
+// Pass several to test per-screen grids; `screen` then refers to the first one.
+function init(config: Config, screenGeometries?: MockQmlRect[]) {
+    screens = screenGeometries ?? [new MockQmlRect(0, 0, 800, 600)];
+    screen = screens[0];
+    tilingAreas = screens.map(s => new MockQmlRect(
+        s.x + config.gapsOuterLeft,
+        s.y + config.gapsOuterTop,
+        s.width - config.gapsOuterLeft - config.gapsOuterRight,
+        s.height - config.gapsOuterTop - config.gapsOuterBottom,
+    ));
+    tilingArea = tilingAreas[0];
     gapH = config.gapsInnerHorizontal;
     gapV = config.gapsInnerVertical;
     runLog = [];
 
     const qtMock = new MockQt();
-    const workspaceMock = new MockWorkspace();
+    const workspaceMock = new MockWorkspace(screens);
 
     Qt = qtMock;
     Workspace = workspaceMock;
@@ -39,6 +45,7 @@ function init(config: Config) {
             workspaceMock.cursorPos.y = Math.floor(frame.y + frame.height/2);
         },
     };
+
 
     const world = new World(config);
     return { qtMock, workspaceMock, world };
@@ -61,6 +68,13 @@ function getClientManager(world: World): ClientManager {
     let clientManager;
     world.do((cm, dm) => clientManager = cm);
     return clientManager!;
+}
+
+function getDesktopManager(world: World): DesktopManager {
+    // don't do this outside of tests
+    let desktopManager;
+    world.do((cm, dm) => desktopManager = dm);
+    return desktopManager!;
 }
 
 function activateRandomWindowOnDesktop(desktop: KwinDesktop) {

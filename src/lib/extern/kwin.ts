@@ -12,6 +12,7 @@ interface Workspace {
     readonly currentDesktop: KwinDesktop;
     readonly currentActivity: string;
     readonly activeScreen: Output;
+    readonly screens: Output[];
     readonly windows: KwinClient[];
     readonly cursorPos: Readonly<QmlPoint>;
 
@@ -50,7 +51,13 @@ const enum MaximizedMode {
 }
 
 interface Tile { __brand: "Tile" }
-interface Output { __brand: "Output" }
+
+interface Output {
+    __brand: "Output";
+
+    readonly name: string;
+    readonly geometry: QmlRect;
+}
 
 interface KwinClient {
     __brand: "KwinClient";
