@@ -1,3 +1,5 @@
+interface QUuid { __brand: "QUuid" }
+
 interface KWin {
     __brand: "KWin";
 
@@ -63,6 +65,7 @@ interface KwinClient {
     __brand: "KwinClient";
 
     readonly caption: string;
+    readonly internalId: QUuid;
     readonly minSize: Readonly<QmlSize>;
     readonly maxSize: Readonly<QmlSize>;
     readonly transient: boolean;
