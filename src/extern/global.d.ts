@@ -6,3 +6,4 @@ declare const notificationInvalidTiledDesktops: Notification;
 declare const notificationInvalidWindowRules: Notification;
 declare const notificationInvalidPresetWidths: Notification;
 declare const moveCursorToFocus: DBusCall;
+declare const clipSetOwner: DBusCall;

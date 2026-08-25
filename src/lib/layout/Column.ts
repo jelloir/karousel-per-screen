@@ -24,8 +24,13 @@ class Column {
             this.grid.onColumnRemoved(this, this.isFocused() ? FocusPassing.Type.Immediate : FocusPassing.Type.None);
             this.grid = targetGrid;
             targetGrid.onColumnAdded(this, leftColumn);
+            const targetScreenName = targetGrid.desktop.getScreen().name;
             for (const window of this.windows.iterator()) {
                 window.client.kwinClient.desktops = [targetGrid.desktop.kwinDesktop];
+                // The target grid may belong to another screen - the evacuation of an unplugged
+                // screen comes through here - and the clip effect must not be left holding the
+                // old screen's name, or the column is clipped to a screen that no longer exists.
+                announceClipOwner(window.client.kwinClient, targetScreenName);
             }
         }
     }

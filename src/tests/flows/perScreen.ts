@@ -3,7 +3,8 @@
 //
 // Both screen arrangements matter. Stacked screens hide overflow for free, because a column
 // scrolled off an edge lands where no screen is. Side by side, the space past a screen's edge IS
-// the neighbouring screen, so a scrolled-off column must be kept in its own grid.
+// the neighbouring screen, so a scrolled-off column must stay in its own grid (and is hidden
+// there by the clip2output effect).
 
 function sideBySideScreens() {
     return [
@@ -85,6 +86,14 @@ tests.register("A window moved to another screen joins that screen's grid", 10, 
     assertOnScreen(client, screen1, "window moved to screen 2 while its output was stale");
     Assert.centered(config, tilingAreas[1], client);
 
+    // The clip2output effect must have been told, or it would keep clipping the window to the
+    // screen it came from and the window would be invisible on its new one.
+    Assert.assert(
+        clipOwnerLog.length >= 1
+            && clipOwnerLog[clipOwnerLog.length - 1].endsWith(" -> " + workspaceMock.screens[1].name),
+        { message: `clip ownership was not handed to screen 2: ${JSON.stringify(clipOwnerLog)}` },
+    );
+
     // once KWin catches up, nothing moves back
     client.settleOutput();
     Assert.equal(
@@ -148,6 +157,15 @@ tests.register("Unplugging a screen takes over its windows", 10, () => {
         workspaceMock.screens[0].name,
         { message: "evacuated window did not join the remaining screen's grid" },
     );
+
+    // The clip effect's ownership is sticky, so the evacuation must announce the new screen -
+    // otherwise the window stays clipped to an output that no longer exists, i.e. invisible.
+    const client1Announcements = clipOwnerLog.filter(entry => entry.startsWith(String(client1.internalId) + " ->"));
+    Assert.assert(
+        client1Announcements.length >= 1
+            && client1Announcements[client1Announcements.length - 1].endsWith(" -> " + workspaceMock.screens[0].name),
+        { message: `clip ownership was not re-announced on evacuation: ${JSON.stringify(clipOwnerLog)}` },
+    );
 });
 
 tests.register("Side by side: a column scrolled off an edge stays in its own grid", 10, () => {
@@ -205,3 +223,37 @@ tests.register("Side by side: a column scrolled off an edge stays in its own gri
     Assert.centered(config, tilingAreas[1], otherClient);
 });
 
+tests.register("Clip claim follows the tiled state: released on float, restored on re-tile", 10, () => {
+    const config = getDefaultConfig();
+    const { qtMock, workspaceMock } = init(config, sideBySideScreens());
+    const [screen0] = screens;
+
+    const client = createClientOnScreen(workspaceMock, screen0);
+    const screen0Name = workspaceMock.screens[0].name;
+    const id = String(client.internalId);
+    const claims = () => clipOwnerLog.filter(entry => entry.startsWith(id + " ->"));
+
+    // tiling must have claimed the window for its screen
+    Assert.assert(
+        claims().length >= 1 && claims()[claims().length - 1] === `${id} -> ${screen0Name}`,
+        { message: `tiling did not claim the window: ${JSON.stringify(clipOwnerLog)}` },
+    );
+
+    // Floating hands the window back to the user, so the claim must be released (empty owner) -
+    // otherwise a floating window dropped across the seam has its far half clipped invisible.
+    workspaceMock.activeWindow = client;
+    qtMock.fireShortcut("karousel-window-toggle-floating");
+    Assert.equal(
+        claims()[claims().length - 1],
+        `${id} -> `,
+        { message: `floating did not release the clip claim: ${JSON.stringify(clipOwnerLog)}` },
+    );
+
+    // and tiling it again must re-claim it
+    qtMock.fireShortcut("karousel-window-toggle-floating");
+    Assert.equal(
+        claims()[claims().length - 1],
+        `${id} -> ${screen0Name}`,
+        { message: `re-tiling did not re-claim the window: ${JSON.stringify(clipOwnerLog)}` },
+    );
+});

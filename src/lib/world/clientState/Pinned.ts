@@ -11,6 +11,9 @@ namespace ClientState {
             this.pinManager = pinManager;
             this.desktopManager = desktopManager;
             this.config = config;
+            // A pinned window sits in a KWin tile the user chose, not in a Karousel grid, so it
+            // must not stay clipped to whichever screen's grid it last belonged to.
+            announceClipRelease(kwinClient);
             if (config.floatingKeepAbove) {
                 kwinClient.keepAbove = true;
             }

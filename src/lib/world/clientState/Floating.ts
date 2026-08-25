@@ -7,6 +7,10 @@ namespace ClientState {
         constructor(world: World, client: ClientWrapper, config: ClientManager.Config, limitHeight: boolean) {
             this.client = client;
             this.config = config;
+            // A floating window is the user's to place, so the clip effect must let go of it -
+            // otherwise a window that was ever tiled stays clipped to one screen forever, and
+            // dropping it across the seam makes its far half invisible.
+            announceClipRelease(client.kwinClient);
             if (config.floatingKeepAbove) {
                 client.kwinClient.keepAbove = true;
             }

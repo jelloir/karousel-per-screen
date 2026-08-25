@@ -6,6 +6,8 @@ let notificationInvalidTiledDesktops: Notification;
 let notificationInvalidWindowRules: Notification;
 let notificationInvalidPresetWidths: Notification;
 let moveCursorToFocus: DBusCall;
+let clipSetOwner: DBusCall;
+let clipOwnerLog: string[];
 
 let screen: MockQmlRect;
 let screens: MockQmlRect[];
@@ -38,6 +40,7 @@ function init(config: Config, screenGeometries?: MockQmlRect[]) {
     Workspace = workspaceMock;
     moveCursorToFocus = {
         __brand: "QmlObject",
+        arguments: [],
         call: () => {
             Assert.assert(Workspace.activeWindow !== null, { message: "moveCursorToFocus should never be called if there's no focused window" });
             const frame = (Workspace.activeWindow! as MockKwinClient).getActualFrameGeometry();
@@ -46,6 +49,21 @@ function init(config: Config, screenGeometries?: MockQmlRect[]) {
         },
     };
 
+    clipOwnerLog = [];
+    clipSetOwner = {
+        __brand: "QmlObject",
+        arguments: [],
+        call: () => {
+            // QDBusMarshaller can only serialise registered types. Passing a QUuid straight
+            // through (as `internalId` is) makes the call fail silently, leaving the effect
+            // clipping the window to the screen it used to be on - i.e. invisible.
+            for (const argument of clipSetOwner.arguments) {
+                Assert.equal(typeof argument, "string",
+                    { message: `DBusCall arguments must be strings, got ${typeof argument}` });
+            }
+            clipOwnerLog.push(clipSetOwner.arguments.join(" -> "));
+        },
+    };
 
     const world = new World(config);
     return { qtMock, workspaceMock, world };
