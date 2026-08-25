@@ -33,6 +33,7 @@ class MockKwinClient {
     public opacity = 1.0;
 
     public readonly fullScreenChanged = new MockQSignal<[]>();
+    public readonly outputChanged = new MockQSignal<[]>();
     public readonly desktopsChanged = new MockQSignal<[]>();
     public readonly activitiesChanged = new MockQSignal<[]>();
     public readonly minimizedChanged = new MockQSignal<[]>();
@@ -163,9 +164,34 @@ class MockKwinClient {
         );
     }
 
-    // KWin assigns a window to the screen showing most of it
+    // KWin assigns a window to the screen showing most of it. A window placed outside of every
+    // screen keeps the one it had, and `outputChanged` is only emitted once the geometry has
+    // settled, which is why Karousel can't trust `output` while a window is being moved.
     public get output() {
         return this._output;
+    }
+
+    // When set, the output is left stale after a geometry change instead of being refreshed. This
+    // reproduces the window KWin leaves open between moving a window and updating its `output`,
+    // during which `output` still names the screen the window came from.
+    public deferOutputUpdate = false;
+
+    private updateOutput() {
+        if (this.deferOutputUpdate) {
+            return;
+        }
+        const newOutput = (Workspace as MockWorkspace).getOutputForGeometry(this._frameGeometry);
+        if (newOutput === null || newOutput === this._output) {
+            return;
+        }
+        this._output = newOutput;
+        this.outputChanged.fire();
+    }
+
+    // Applies the output change KWin would have emitted once the geometry settled.
+    public settleOutput() {
+        this.deferOutputUpdate = false;
+        this.updateOutput();
     }
 
     // for assertions
@@ -198,6 +224,7 @@ class MockKwinClient {
         }
         if (!rectEquals(frameGeometry, oldFrameGeometry)) {
             this.frameGeometryChanged.fire(oldFrameGeometry);
+            this.updateOutput(); // KWin updates the output only after the geometry has settled
         }
     }
 
