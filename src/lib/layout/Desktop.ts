@@ -12,7 +12,7 @@ class Desktop {
         public readonly kwinDesktop: KwinDesktop,
         private readonly pinManager: PinManager,
         private readonly config: Desktop.Config,
-        private readonly getScreen: () => Output,
+        public readonly getScreen: () => Output,
         layoutConfig: LayoutConfig,
         focusPasser: FocusPassing.Passer,
     ) {

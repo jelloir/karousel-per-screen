@@ -11,7 +11,7 @@ class MockKwinClient {
     public resize = false;
     public readonly fullScreenable: boolean = true;
     public readonly maximizable: boolean = true;
-    public readonly output: Output = { __brand: "Output" };
+    private _output: Output = Workspace.activeScreen;
     public resourceClass = "app";
     public readonly dock: boolean = false;
     public readonly normalWindow: boolean = true;
@@ -53,6 +53,7 @@ class MockKwinClient {
     ) {
         this.windowedFrameGeometry = _frameGeometry.clone();
         this.transient = transientFor !== null;
+        this._output = (Workspace as MockWorkspace).getOutputForGeometry(_frameGeometry) ?? Workspace.activeScreen;
         this._desktops = [Workspace.currentDesktop];
         this.activities = [Workspace.currentActivity];
     }
@@ -160,6 +161,11 @@ class MockKwinClient {
                 this.frameGeometry = targetFrameGeometry;
             },
         );
+    }
+
+    // KWin assigns a window to the screen showing most of it
+    public get output() {
+        return this._output;
     }
 
     // for assertions

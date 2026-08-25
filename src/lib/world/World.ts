@@ -96,9 +96,9 @@ class World {
     }
 
     private update() {
-        const currentDesktop = this.desktopManager.getCurrentDesktop();
-        if (currentDesktop !== undefined) {
-            currentDesktop.arrange();
+        // every screen has its own grid, so all of them get arranged
+        for (const desktop of this.desktopManager.getCurrentDesktops()) {
+            desktop.arrange();
         }
     }
 
