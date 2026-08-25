@@ -18,9 +18,13 @@ Karousel requires the following QML modules:
 - org.kde.notification 1.0
 
 ## Limitations
-- Doesn't support multiple screens
 - Doesn't support windows on all desktops
 - Doesn't support windows on multiple activities
+
+## Multiple screens
+Every screen gets its own grid, scrolled independently. Windows join the grid of the screen they appear on, and moving a window to another screen (by dragging it, or with KWin's _Window to Next Screen_ shortcut) moves it into that screen's grid.
+
+With screens side by side, a column scrolled past the edge of its screen would remain visible on the neighbouring screen. Install [clip2output](https://github.com/jelloir/clip2output) to clip each window at the boundary of its own screen. Without it, everything still works, but scrolled-away columns spill onto the neighbouring screen instead of disappearing at the seam.
 
 ## Installation
 First install the _org.kde.notification_ QML module (_qml-module-org-kde-notifications_ package on Ubuntu).
