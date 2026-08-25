@@ -117,6 +117,15 @@ class ClientWrapper {
         return this.maximizedMode;
     }
 
+    // true if the client still sits exactly where Karousel last put it, i.e. its geometry wasn't
+    // changed by the user or by KWin
+    public isAtLastPlacement() {
+        if (this.lastPlacement === null) {
+            return false;
+        }
+        return rectEquals(roundQtRect(this.kwinClient.frameGeometry), this.lastPlacement);
+    }
+
     public isManipulatingGeometry(newGeometry: QmlRect | null) {
         if (newGeometry !== null && newGeometry === this.lastPlacement) {
             return true;

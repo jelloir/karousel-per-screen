@@ -95,6 +95,7 @@ interface KwinClient {
     opacity: number;
 
     readonly fullScreenChanged: QSignal<[]>;
+    readonly outputChanged: QSignal<[]>;
     readonly desktopsChanged: QSignal<[]>;
     readonly activitiesChanged: QSignal<[]>;
     readonly minimizedChanged: QSignal<[]>;

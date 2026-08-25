@@ -56,6 +56,29 @@ namespace ClientState {
                 });
             });
 
+            manager.connect(kwinClient.outputChanged, () => {
+                if (kwinClient.move || client.isManipulatingGeometry(null)) {
+                    // the window is still being dragged (handled in `interactiveMoveResizeFinished`),
+                    // or Karousel is placing it right now
+                    return;
+                }
+                if (client.isAtLastPlacement()) {
+                    // The window is exactly where Karousel put it, so KWin re-attributing it to
+                    // another output is a consequence of our own scrolling, not of a user action.
+                    // With side-by-side screens this is the normal case for a column scrolled off
+                    // an edge: the space past that edge *is* the neighbouring output. Following it
+                    // there would hand the column to the neighbour's grid.
+                    return;
+                }
+                const gridScreen = window.column.grid.desktop.getScreen();
+                if (kwinClient.output.name === gridScreen.name) {
+                    return;
+                }
+                world.do((clientManager, desktopManager) => {
+                    Tiled.followClientToScreen(clientManager, desktopManager, client, window, null);
+                });
+            });
+
             manager.connect(kwinClient.minimizedChanged, () => {
                 console.assert(kwinClient.minimized);
                 world.do((clientManager, desktopManager) => {
@@ -104,7 +127,11 @@ namespace ClientState {
             manager.connect(kwinClient.interactiveMoveResizeFinished, () => {
                 if (moving) {
                     moving = false;
-                    world.do(() => window.column.grid.desktop.onLayoutChanged()); // move the dragged window back to its position
+                    world.do((clientManager, desktopManager) => {
+                        // the user may have dragged the window onto another screen
+                        Tiled.followClientToScreen(clientManager, desktopManager, client, window, roundQtRect(kwinClient.frameGeometry));
+                        window.column.grid.desktop.onLayoutChanged(); // move the dragged window back to its position
+                    });
                 }
                 if (resizing) {
                     resizing = false;
@@ -165,6 +192,22 @@ namespace ClientState {
                     client.getMaximizedMode() === MaximizedMode.Unmaximized &&
                     !Clients.isFullScreenGeometry(kwinClient) // not using `kwinClient.fullScreen` because it may not be set yet at this point
                 ) {
+                    if (
+                        !kwinClient.move && // dragging is handled in `interactiveMoveResizeFinished`
+                        // cheapest test first: this fires on every geometry change
+                        !Tiled.isOnScreen(newGeometry, window.column.grid.desktop.getScreen()) &&
+                        !client.isAtLastPlacement()
+                    ) {
+                        // The window was moved onto another screen, e.g. with KWin's own
+                        // "Window to Next Screen" shortcut. KWin only updates `kwinClient.output`
+                        // once the geometry has settled, so the new screen is derived from the new
+                        // geometry instead. Without this the window would just get snapped back
+                        // into the grid of its old screen.
+                        world.do((clientManager, desktopManager) => {
+                            Tiled.followClientToScreen(clientManager, desktopManager, client, window, newGeometry);
+                        });
+                        return;
+                    }
                     if (externalFrameGeometryChangedRateLimiter.acquire()) {
                         world.do(() => window.onFrameGeometryChanged());
                     }
@@ -208,6 +251,43 @@ namespace ClientState {
             }
         }
 
+        // True if `screen` shows more than half of `frame`, in which case it is also the screen
+        // showing the biggest part of it. Deliberately conservative: a window straddling several
+        // screens counts as being on none of them, which only costs a redundant lookup.
+        private static isOnScreen(frame: QmlRect, screen: Output) {
+            return 2 * rectIntersectionArea(frame, screen.geometry) > frame.width * frame.height;
+        }
+
+        // Moves the window into the grid of the screen it currently is on. If `frame` is given, the
+        // screen is the one showing the biggest part of it, otherwise the client's own idea of its
+        // output is used. Passing the frame explicitly matters because KWin's `frameGeometry`
+        // getter can still report the previous geometry right after a window has been moved.
+        private static followClientToScreen(
+            clientManager: ClientManager,
+            desktopManager: DesktopManager,
+            client: ClientWrapper,
+            window: Window,
+            frame: QmlRect|null,
+        ) {
+            const screen = frame === null ?
+                desktopManager.getScreenForClient(client.kwinClient) :
+                desktopManager.getScreenForGeometry(frame);
+            if (screen === null) {
+                // the window is outside of every screen, e.g. a column scrolled out of view, so
+                // there is no screen for it to follow
+                return;
+            }
+            if (screen.name === window.column.grid.desktop.getScreen().name) {
+                return; // already on the right screen
+            }
+            const desktop = desktopManager.getDesktopForClient(client.kwinClient, screen);
+            if (desktop === undefined) {
+                clientManager.floatClient(client);
+                return;
+            }
+            Tiled.moveWindowToGrid(window, desktop.grid);
+        }
+
         private static moveWindowToGrid(window: Window, grid: Grid) {
             if (grid === window.column.grid) {
                 // window already on the given grid
@@ -218,6 +298,7 @@ namespace ClientState {
             const passFocus = window.isFocused() ? FocusPassing.Type.OnUnfocus : FocusPassing.Type.None;
             window.moveToColumn(newColumn, true, passFocus);
         }
+
 
         private static prepareClientForTiling(client: ClientWrapper, config: LayoutConfig) {
             if (config.skipSwitcher) {
