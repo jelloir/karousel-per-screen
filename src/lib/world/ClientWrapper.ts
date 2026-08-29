@@ -6,6 +6,9 @@ class ClientWrapper {
     private maximizedMode: MaximizedMode | undefined;
     private readonly manipulatingGeometry: Doer;
     private lastPlacement: QmlRect | null; // workaround for issue #19
+    // the position of `lastPlacement` with the client's previously committed size: the state a
+    // window legitimately sits in while the client has not yet drawn at the requested size
+    private interimPlacement: QmlRect | null;
 
     constructor(
         public readonly kwinClient: KwinClient,
@@ -24,6 +27,7 @@ class ClientWrapper {
         this.preferredWidth = kwinClient.frameGeometry.width.round();
         this.manipulatingGeometry = new Doer();
         this.lastPlacement = null;
+        this.interimPlacement = null;
         this.stateManager = new ClientState.Manager(constructInitialState(this));
     }
 
@@ -34,6 +38,31 @@ class ClientWrapper {
                 kdbg("place SKIP resize-in-progress " + kdbgWin(this.kwinClient));
                 return;
             }
+
+            /*
+                On Wayland, a placement that changes the window's SIZE only takes effect once
+                the client draws a buffer of the new size - and a window parked off-screen gets
+                no frame callbacks, so a well-behaved client stops drawing and never delivers
+                that buffer. Worse, while that resize is pending, KWin defers plain moves of the
+                same window too, so it cannot even be scrolled back into view: it is stranded
+                wherever it was, invisible, until something else makes the client redraw.
+
+                Writing the target position FIRST, with the size the client has already
+                committed, sidesteps the whole trap: a same-size move applies immediately, even
+                while a resize is pending. The window is therefore always at the position the
+                layout wants; only its size catches up when the client next draws, which for a
+                freshly scrolled-in window is at most one commit later.
+            */
+            const current = roundQtRect(this.kwinClient.frameGeometry);
+            if (current.width !== width || current.height !== height) {
+                this.interimPlacement = Qt.rect(x, y, current.width, current.height);
+                kdbg("place-interim " + kdbgWin(this.kwinClient) + " -> " + x + "," + y +
+                    " keeping " + current.width + "x" + current.height);
+                this.kwinClient.frameGeometry = this.interimPlacement;
+            } else {
+                this.interimPlacement = null;
+            }
+
             this.lastPlacement = Qt.rect(x, y, width, height);
             kdbg("place " + kdbgWin(this.kwinClient) + " -> " + x + "," + y + " " + width + "x" + height);
             this.kwinClient.frameGeometry = this.lastPlacement;
@@ -130,11 +159,16 @@ class ClientWrapper {
         if (this.lastPlacement === null) {
             return false;
         }
-        return rectEquals(roundQtRect(this.kwinClient.frameGeometry), this.lastPlacement);
+        const frame = roundQtRect(this.kwinClient.frameGeometry);
+        if (rectEquals(frame, this.lastPlacement)) {
+            return true;
+        }
+        // right position, size not yet delivered by the client - still where Karousel put it
+        return this.interimPlacement !== null && rectEquals(frame, this.interimPlacement);
     }
 
     public isManipulatingGeometry(newGeometry: QmlRect | null) {
-        if (newGeometry !== null && newGeometry === this.lastPlacement) {
+        if (newGeometry !== null && (newGeometry === this.lastPlacement || newGeometry === this.interimPlacement)) {
             return true;
         }
         return this.manipulatingGeometry.isDoing();
