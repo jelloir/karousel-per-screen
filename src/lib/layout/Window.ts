@@ -61,7 +61,27 @@ class Window {
             }
         }
         if (!maximized) {
-            this.client.place(x, y, width, height);
+            /*
+                A window parked entirely outside its own screen is invisible, and on Wayland an
+                invisible client may never draw the buffer that acknowledges a resize (KWin
+                6.3 then also defers every later move of that window behind the unacknowledged
+                configure, stranding it). So while the target is fully off-screen, only the
+                POSITION is imposed and the size the client last delivered is kept - there is
+                nothing to see anyway. The column's size is applied by the arrange that brings
+                the window back into view: place() moves it in first at the delivered size,
+                and once visible the client gets frame callbacks again and the resize lands.
+            */
+            const screen = this.column.grid.desktop.getScreen().geometry;
+            const current = roundQtRect(this.client.kwinClient.frameGeometry);
+            const sizeChanges = current.width !== width || current.height !== height;
+            if (sizeChanges && rectIntersectionArea(Qt.rect(x, y, width, height), screen) === 0) {
+                kdbg("arrange DEFER-RESIZE " + kdbgWin(this.client.kwinClient) +
+                    " off-view at " + x + "," + y + ": keeping " + current.width + "x" + current.height +
+                    " instead of " + width + "x" + height);
+                this.client.place(x, y, current.width, current.height);
+            } else {
+                this.client.place(x, y, width, height);
+            }
         }
     }
 
