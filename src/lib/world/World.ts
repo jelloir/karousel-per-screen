@@ -7,6 +7,7 @@ class World {
     private readonly screenResizedDelayer: Delayer;
 
     constructor(config: Config) {
+        kdbg("World starting (debug-placement instrumented build)");
         const focusPasser = new FocusPassing.Passer();
         this.workspaceSignalManager = initWorkspaceSignalHandlers(this, focusPasser);
 

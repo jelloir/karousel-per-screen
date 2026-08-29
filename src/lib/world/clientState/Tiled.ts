@@ -207,6 +207,7 @@ namespace ClientState {
                         // once the geometry has settled, so the new screen is derived from the new
                         // geometry instead. Without this the window would just get snapped back
                         // into the grid of its old screen.
+                        kdbg("extGeom FOLLOW " + kdbgWin(kwinClient) + " new=" + kdbgRect(newGeometry));
                         world.do((clientManager, desktopManager) => {
                             Tiled.followClientToScreen(clientManager, desktopManager, client, window, newGeometry);
                         });
@@ -214,7 +215,15 @@ namespace ClientState {
                     }
                     if (externalFrameGeometryChangedRateLimiter.acquire()) {
                         world.do(() => window.onFrameGeometryChanged());
+                    } else {
+                        kdbg("extGeom RATE-DROPPED " + kdbgWin(kwinClient) + " new=" + kdbgRect(newGeometry));
                     }
+                } else if (!client.isManipulatingGeometry(newGeometry)) {
+                    // not karousel's own write, yet the external-change handling was gated off
+                    kdbg("extGeom GATED " + kdbgWin(kwinClient) + " new=" + kdbgRect(newGeometry) +
+                        " userResizing=" + window.column.grid.isUserResizing() +
+                        " maxMode=" + client.getMaximizedMode() +
+                        " fullScreenGeo=" + Clients.isFullScreenGeometry(kwinClient));
                 }
             });
 

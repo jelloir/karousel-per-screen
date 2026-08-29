@@ -31,15 +31,22 @@ class ClientWrapper {
         this.manipulatingGeometry.do(() => {
             if (this.kwinClient.resize) {
                 // window is being manually resized, prevent fighting with the user
+                kdbg("place SKIP resize-in-progress " + kdbgWin(this.kwinClient));
                 return;
             }
             this.lastPlacement = Qt.rect(x, y, width, height);
+            kdbg("place " + kdbgWin(this.kwinClient) + " -> " + x + "," + y + " " + width + "x" + height);
             this.kwinClient.frameGeometry = this.lastPlacement;
             if (this.kwinClient.frameGeometry !== this.lastPlacement) {
                 // frameGeometry assignment failed. This sometimes happens on Wayland
                 // when a window is off-screen, effectively making it stuck there.
                 this.kwinClient.frameGeometry.x = x; // This makes it unstuck.
                 this.kwinClient.frameGeometry = this.lastPlacement;
+            }
+            const applied = this.kwinClient.frameGeometry;
+            if (Math.round(applied.x) !== x || Math.round(applied.y) !== y ||
+                    Math.round(applied.width) !== width || Math.round(applied.height) !== height) {
+                kdbg("place NOT-APPLIED " + kdbgWin(this.kwinClient) + " still " + kdbgRect(applied));
             }
         });
     }
@@ -181,6 +188,8 @@ class ClientWrapper {
         const manager = new SignalManager();
 
         manager.connect(client.kwinClient.maximizedAboutToChange, (maximizedMode: MaximizedMode) => {
+            kdbg("maximizedAboutToChange " + kdbgWin(client.kwinClient) + " mode=" + maximizedMode +
+                " (was " + client.maximizedMode + ") geo=" + kdbgRect(client.kwinClient.frameGeometry));
             if (maximizedMode !== MaximizedMode.Unmaximized && client.kwinClient.tile !== null) {
                 client.kwinClient.tile = null;
             }

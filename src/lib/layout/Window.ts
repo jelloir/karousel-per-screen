@@ -19,6 +19,10 @@ class Window {
         };
 
         this.skipArrange = this.client.kwinClient.fullScreen || maximizedMode !== MaximizedMode.Unmaximized;
+        if (this.skipArrange) {
+            kdbg("Window created with skipArrange=true " + kdbgWin(client.kwinClient) +
+                " fullScreen=" + client.kwinClient.fullScreen + " maxMode=" + maximizedMode);
+        }
         this.column = column;
         column.onWindowAdded(this, true);
     }
@@ -35,6 +39,8 @@ class Window {
     public arrange(x: number, y: number, width: number, height: number) {
         if (this.skipArrange) {
             // window is maximized, fullscreen, or being manually resized, prevent fighting with the user
+            kdbg("arrange SKIP skipArrange " + kdbgWin(this.client.kwinClient) +
+                " wanted " + x + "," + y + " " + width + "x" + height);
             return;
         }
 
@@ -98,6 +104,8 @@ class Window {
 
     public onMaximizedChanged(maximizedMode: MaximizedMode) {
         const maximized = maximizedMode !== MaximizedMode.Unmaximized;
+        kdbg("onMaximizedChanged " + kdbgWin(this.client.kwinClient) + " mode=" + maximizedMode +
+            " skipArrange " + this.skipArrange + "->" + maximized);
         this.skipArrange = maximized;
         if (this.column.grid.config.tiledKeepBelow) {
             this.client.kwinClient.keepBelow = !maximized;
@@ -112,6 +120,8 @@ class Window {
     }
 
     public onFullScreenChanged(fullScreen: boolean) {
+        kdbg("onFullScreenChanged " + kdbgWin(this.client.kwinClient) + " fullScreen=" + fullScreen +
+            " skipArrange " + this.skipArrange + "->" + fullScreen);
         this.skipArrange = fullScreen;
         if (this.column.grid.config.tiledKeepBelow) {
             this.client.kwinClient.keepBelow = !fullScreen;
