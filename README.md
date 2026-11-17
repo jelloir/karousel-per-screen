@@ -1,4 +1,12 @@
 # Karousel
+
+> **This is not the official Karousel.** It is [Karousel](https://github.com/peterfajdiga/karousel) by Peter Fajdiga
+> with one addition: [every screen gets its own grid](#multiple-screens).
+> The change is proposed upstream in [peterfajdiga/karousel#3](https://github.com/peterfajdiga/karousel/issues/3),
+> and this repository exists only until it is merged there.
+> Each release here is the matching official release plus the per-screen patches, nothing more.
+> It is offered as-is and is not separately maintained.
+
 Scrollable tiling Kwin script. Works especially well with ultrawide screens.
 Use with [this](https://github.com/peterfajdiga/kwin4_effect_geometry_change) for animations.
 
@@ -29,9 +37,32 @@ With screens side by side, a column scrolled past the edge of its screen would r
 ## Installation
 First install the _org.kde.notification_ QML module (_qml-module-org-kde-notifications_ package on Ubuntu).
 
-Then download the [latest release](https://github.com/peterfajdiga/karousel/releases/latest) and extract it into _~/.local/share/kwin/scripts/_.
+Then download the [latest release](https://github.com/jelloir/karousel-per-screen/releases/latest) and extract it into _~/.local/share/kwin/scripts/_.
 
-Or clone the repo and run `make install` (requires npm, node, and tsc).
+Or clone the repo and run `make install` (requires pnpm, node, and tsc).
+
+This build installs as _Karousel_, in the same place as the official one, so it replaces it rather than sitting beside it, and keeps your settings and shortcuts.
+If the official Karousel is installed, disable it in _System Settings → Window Management → KWin Scripts_, move _~/.local/share/kwin/scripts/karousel_ aside, extract this release in its place, re-enable Karousel, then log out and back in (KWin keeps running the old script until you do).
+To go back, do the same with an [official release](https://github.com/peterfajdiga/karousel/releases/latest).
+
+### clip2output (optional, recommended for side-by-side screens)
+[clip2output](https://github.com/jelloir/clip2output) is a small KWin effect that stops columns scrolled off one screen from showing on the next.
+It needs Wayland and KWin 6.3 or later, and it is compiled against KWin's own development headers, which must match your running KWin **exactly**, so rebuild it whenever your distribution updates Plasma.
+On Debian/Ubuntu:
+
+```
+sudo apt install kwin-dev g++ cmake extra-cmake-modules pkg-config \
+                 libdrm-dev libwayland-dev libepoxy-dev \
+                 qt6-declarative-dev libkf6windowsystem-dev
+git clone https://github.com/jelloir/clip2output.git
+cd clip2output
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+./install.sh
+kwriteconfig6 --file kwinrc --group Plugins --key clip2outputEnabled true
+```
+
+Then log out and back in. See the [clip2output README](https://github.com/jelloir/clip2output#readme) for other distributions and for troubleshooting.
 
 ## Key bindings
 The key bindings can be configured in KDE System Settings among KWin's own keyboard shortcuts.
